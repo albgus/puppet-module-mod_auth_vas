@@ -2,7 +2,7 @@ class mod_auth_vas (
   $mod_auth_vas_package = 'mod-auth-vas-http22',
   $realm = 'EXAMPLE.COM',
   $ou = 'OU=Servers,DC=example,DC=com',
-  $manage_host_keytab = 'true',
+  $manage_host_keytab = true,
   $http_keytab_path = '/etc/opt/quest/vas/HTTP.keytab',
   $host_keytab_path = '/etc/opt/quest/vas/host.keytab',
   $host_keytab_owner = 'root',
@@ -10,7 +10,13 @@ class mod_auth_vas (
   $host_keytab_mode = '0640',
 ) {
 
-  # TODO: Add input validations
+  if type($manage_host_keytab) == 'string' {
+    $manage_host_keytab_real = str2bool($manage_host_keytab)
+  } else {
+    $manage_host_keytab_real = $manage_host_keytab
+  }
+  validate_absolute_path($http_keytab_path)
+  validate_absolute_path($host_keytab_path)
 
   $hostname_upper = upcase($::hostname)
 
@@ -28,22 +34,21 @@ class mod_auth_vas (
     unless  => "/opt/quest/bin/vastool -u host/ attrs CN=${::hostname},${ou} | grep \"servicePrincipalName: HTTP/${::fqdn}\""
   }
 
-  if $manage_host_keytab == true { # FIXME: This should be converted to a boolean.
+  if $manage_host_keytab_real == true {
     file { 'host.keytab':
       ensure => file,
       path   => $host_keytab_path,
       owner  => $host_keytab_owner,
-      group  => $keytab_group,
-      mode   => $keytab_mode,
+      group  => $host_keytab_group,
+      mode   => $host_keytab_mode,
     }
   }
 
   file { 'HTTP.keytab':
     ensure => link,
     path   => $http_keytab_path,
-    target => '/etc/opt/quest/vas/host.keytab', 
+    target => $host_keytab_path,
   }
 
-  Exec['vastool_ktutil_create_alias'] -> Exec['vastool_setattrs']
-
+  Exec['vasinst'] -> Exec['vastool_ktutil_create_alias'] -> Exec['vastool_setattrs']
 }
