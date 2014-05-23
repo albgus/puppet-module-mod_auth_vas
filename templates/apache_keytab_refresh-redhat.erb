@@ -1,0 +1,65 @@
+#!/bin/bash
+# Init script for managing Apache keytab refresh script
+# Written by Martin Hagstrom <martin.hagstrom@ericsson.com> 2013-08-09
+# chkconfig: 35 90 10
+# description: Restart apache when VAS keytab is modified
+# pidfile: /var/run/apache_keytab_refresh.pid
+
+# Source function library.
+. /etc/init.d/functions
+
+PROGRAM=<%= @keytabrefresh_script_path %>
+OPTIONS="--start"
+SERVICENAME="Apache keytab refresh"
+LOCKFILE=/var/lock/subsys/apache_keytab_refresh
+PIDFILE=/var/run/apache_keytab_refresh.pid
+
+start() {
+        echo -n "Starting $SERVICENAME: "
+        if [ -f $PIDFILE ]; then
+                failure $"$SERVICENAME startup"
+                echo
+                return 1
+        fi
+        daemon --pidfile=$PIDFILE $PROGRAM $OPTIONS
+        RETVAL=$?
+        [ $RETVAL = 0 ] && touch $LOCKFILE
+        echo
+        return $RETVAL
+}
+
+stop() {
+        echo -n "Shutting down $SERVICENAME: "
+        if [ -s $PIDFILE ]; then
+                pkill -TERM -P $(cat $PIDFILE)
+                RETVAL=$?
+                [ $RETVAL = 0 ] && rm -f $LOCKFILE $PIDFILE && success $"$SERVICENAME shutdown" || failure $"$SERVICENAME shutdown"
+                echo
+                return $RETVAL
+        else
+                failure $"$SERVICENAME shutdown"
+                echo
+                return 1
+        fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $PROGRAM
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $SERVICENAME {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
+exit $?

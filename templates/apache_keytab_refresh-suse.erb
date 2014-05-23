@@ -1,0 +1,61 @@
+#!/bin/bash
+# Init script for managing Apache keytab refresh script
+# Written by Martin Hagstrom <martin.hagstrom@ericsson.com> 2013-08-09
+### BEGIN INIT INFO
+# Provides:                     apache_keytab_refresh.sh
+# Required-Start:               apache vasd
+# Required-Stop:                apache vasd
+# Default-Start:                3 5
+# Default-Stop:                 0 1 2 6
+# Short-Description:            Apache keytab refresh
+# Description:                  Restart apache when VAS keytab is modified
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.status
+
+# Reset status of this service
+rc_reset
+
+PROGRAM=<%= @keytabrefresh_script_path %>
+OPTIONS="--start"
+SERVICENAME="Apache keytab refresh"
+LOCKFILE=/var/lock/subsys/apache_keytab_refresh
+PIDFILE=/var/run/apache_keytab_refresh.pid
+
+start() {
+        /sbin/start_daemon -p $PIDFILE $PROGRAM $OPTIONS
+        rc_status -v
+}
+
+stop() {
+        if [ -s $PIDFILE ]; then
+                pkill -TERM -P $(cat $PIDFILE)
+                rm -f $PIDFILE
+        else
+                /bin/false
+        fi
+        rc_status -v
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        /sbin/checkproc $PROGRAM
+        rc_status -v
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: $SERVICENAME {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
+exit $?
