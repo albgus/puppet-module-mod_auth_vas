@@ -1,0 +1,34 @@
+#!/bin/sh
+# Script to restart apache when keytab has been updated
+# Written by Martin Hagstrom <martin.hagstrom@ericsson.com> 2013-08-09
+
+INOTIFYWAIT=<%= @inotifywait_path %>
+KEYTAB=<%= @host_keytab_path %>
+if [ -f /etc/redhat-release ]; then
+  APACHE=/etc/init.d/httpd
+else
+  APACHE=/etc/init.d/apache2
+fi
+RESTART_COMMAND=restart
+LOGFILE=/var/log/apache_keytab
+ERRORMAILRECIPIENT=<%= @keytabrefresh_mail_recipients.join(", ") %>
+PIDFILE=/var/run/apache_keytab_refresh.pid
+
+# Restart script with nohup in order to get properly daemonized by the init script
+if [ "X"$1 = "X--start" ]; then
+  nohup $0 >/dev/null 2>&1 &
+  exit
+fi
+
+if [ -f $INOTIFYWAIT ]; then
+  echo $$ > $PIDFILE
+  while $INOTIFYWAIT -qqe modify $KEYTAB; do
+    $APACHE $RESTART_COMMAND 2>> $LOGFILE >> $LOGFILE
+    if [ $? -ne 0 ]; then
+      echo "Apache failed to restart on $(hostname). This restart was made because the VAS keytab was modified. Please check it out and fix." | mail -s "Apache restart failed on $(hostname)" "$ERRORMAILRECIPIENT"
+    fi
+    echo "Apache reloaded - $(date)" >> $LOGFILE
+  done
+else
+  echo "Could not find inotifywait"
+fi
