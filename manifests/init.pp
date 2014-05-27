@@ -1,21 +1,21 @@
 class mod_auth_vas (
-  $mod_auth_vas_package = 'mod-auth-vas-http22',
-  $realm = 'EXAMPLE.COM',
-  $ou = 'OU=Servers,DC=example,DC=com',
-  $manage_host_keytab = true,
-  $http_keytab_path = '/etc/opt/quest/vas/HTTP.keytab',
-  $host_keytab_path = '/etc/opt/quest/vas/host.keytab',
-  $host_keytab_owner = 'root',
-  $host_keytab_group = 'root',
-  $host_keytab_mode = '0640',
-  $keytabrefresh_script_enable = true,
-  $keytabrefresh_script_path = '/usr/local/bin/apache_keytab_refresh.sh',
-  $keytabrefresh_script_owner = 'root',
-  $keytabrefresh_script_group = 'root',
-  $keytabrefresh_script_mode = '0744',
+  $mod_auth_vas_package            = 'mod-auth-vas-http22',
+  $realm                           = 'EXAMPLE.COM',
+  $ou                              = 'OU=Servers,DC=example,DC=com',
+  $manage_host_keytab              = true,
+  $http_keytab_path                = '/etc/opt/quest/vas/HTTP.keytab',
+  $host_keytab_path                = '/etc/opt/quest/vas/host.keytab',
+  $host_keytab_owner               = 'root',
+  $host_keytab_group               = 'root',
+  $host_keytab_mode                = '0640',
+  $keytabrefresh_script_enable     = true,
+  $keytabrefresh_script_path       = '/usr/local/bin/apache_keytab_refresh.sh',
+  $keytabrefresh_script_owner      = 'root',
+  $keytabrefresh_script_group      = 'root',
+  $keytabrefresh_script_mode       = '0744',
   $keytabrefresh_initscript_source = 'USE_DEFAULTS',
-  $inotifywait_path = '/usr/bin/inotifywait',
-  $keytabrefresh_mail_recipients = [],
+  $inotifywait_path                = '/usr/bin/inotifywait',
+  $keytabrefresh_mail_recipients   = [],
 ) {
 
   if type($manage_host_keytab) == 'string' {
@@ -72,15 +72,15 @@ class mod_auth_vas (
   if $keytabrefresh_script_enable_real == true {
     exec { 'check_for_inotifywait':
       command => 'false',
-      path => '/bin:/usr/bin',
-      unless => "test -f $inotifywait_path",
+      path    => '/bin:/usr/bin',
+      unless  => "test -f $inotifywait_path",
     }
     file { 'keytabrefresh_script':
-      ensure => file,
-      path => $keytabrefresh_script_path,
-      owner => $keytabrefresh_script_owner,
-      group => $keytabrefresh_script_group,
-      mode => $keytabrefresh_script_mode,
+      ensure  => file,
+      path    => $keytabrefresh_script_path,
+      owner   => $keytabrefresh_script_owner,
+      group   => $keytabrefresh_script_group,
+      mode    => $keytabrefresh_script_mode,
       content => template('mod_auth_vas/apache_keytab_refresh.sh.erb'),
       require => Exec[check_for_inotifywait],
     }
@@ -102,18 +102,18 @@ class mod_auth_vas (
     }
 
     file { 'keytabrefresh_initscript':
-      ensure => file,
-      path => '/etc/init.d/apache_keytab_refresh',
-      owner => 'root',
-      group => 'root',
-      mode => '0755',
+      ensure  => file,
+      path    => '/etc/init.d/apache_keytab_refresh',
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0755',
       content => $keytabrefresh_initscript_source_real,
     }
 
     service { 'keytabrefresh_initscript_service':
-      name => 'apache_keytab_refresh',
-      ensure => 'running',
-      enable => 'true',
+      name    => 'apache_keytab_refresh',
+      ensure  => 'running',
+      enable  => 'true',
       require => [ File[keytabrefresh_initscript], Exec[check_for_inotifywait], ],
     }
 
