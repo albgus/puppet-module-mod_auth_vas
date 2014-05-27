@@ -70,6 +70,11 @@ class mod_auth_vas (
   }
 
   if $keytabrefresh_script_enable_real == true {
+    exec { 'check_for_inotifywait':
+      command => 'false',
+      path => '/bin:/usr/bin',
+      unless => "test -f $inotifywait_path",
+    }
     file { 'keytabrefresh_script':
       ensure => file,
       path => $keytabrefresh_script_path,
@@ -77,6 +82,7 @@ class mod_auth_vas (
       group => $keytabrefresh_script_group,
       mode => $keytabrefresh_script_mode,
       content => template('mod_auth_vas/apache_keytab_refresh.sh.erb'),
+      require => Exec[check_for_inotifywait],
     }
 
     if $keytabrefresh_initscript_source == 'USE_DEFAULTS' {
@@ -108,7 +114,7 @@ class mod_auth_vas (
       name => 'apache_keytab_refresh',
       ensure => 'running',
       enable => 'true',
-      require => File[keytabrefresh_initscript],
+      require => [ File[keytabrefresh_initscript], Exec[check_for_inotifywait], ],
     }
 
   }
