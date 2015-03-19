@@ -1,3 +1,4 @@
+# Manage mod_auth_vas apache plugin
 class mod_auth_vas (
   $mod_auth_vas_package            = 'mod-auth-vas-http22',
   $realm                           = 'EXAMPLE.COM',
@@ -49,7 +50,7 @@ class mod_auth_vas (
   }
 
   exec { 'vastool_setattrs':
-    command => "/opt/quest/bin/vastool -u host/ setattrs -m -d CN=${::hostname},${ou} servicePrincipalName host/$hostname_upper host/${::fqdn} HTTP/${::fqdn}",
+    command => "/opt/quest/bin/vastool -u host/ setattrs -m -d CN=${::hostname},${ou} servicePrincipalName host/${hostname_upper} host/${::fqdn} HTTP/${::fqdn}",
     unless  => "/opt/quest/bin/vastool -u host/ attrs CN=${::hostname},${ou} | grep \"servicePrincipalName: HTTP/${::fqdn}\""
   }
 
@@ -73,7 +74,7 @@ class mod_auth_vas (
     exec { 'check_for_inotifywait':
       command => 'false',
       path    => '/bin:/usr/bin',
-      unless  => "test -f $inotifywait_path",
+      unless  => "test -f ${inotifywait_path}",
     }
     file { 'keytabrefresh_script':
       ensure  => file,
@@ -94,7 +95,7 @@ class mod_auth_vas (
           $keytabrefresh_initscript_source_real = template('mod_auth_vas/apache_keytab_refresh-suse.erb')
         }
         default: {
-          fail("Init script is only available for RedHat and Suse. Please supply your own file.")
+          fail('Init script is only available for RedHat and Suse. Please supply your own file.')
         }
       }
     } else {
@@ -111,9 +112,9 @@ class mod_auth_vas (
     }
 
     service { 'keytabrefresh_initscript_service':
-      name    => 'apache_keytab_refresh',
       ensure  => 'running',
-      enable  => 'true',
+      name    => 'apache_keytab_refresh',
+      enable  => true,
       require => [ File[keytabrefresh_initscript], Exec[check_for_inotifywait], ],
     }
 
