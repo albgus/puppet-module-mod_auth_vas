@@ -18,12 +18,12 @@ class mod_auth_vas (
   $keytabrefresh_mail_recipients   = [],
 ) {
 
-  if type($manage_host_keytab) == 'string' {
+  if is_string($manage_host_keytab) {
     $manage_host_keytab_real = str2bool($manage_host_keytab)
   } else {
     $manage_host_keytab_real = $manage_host_keytab
   }
-  if type($keytabrefresh_script_enable) == 'string' {
+  if is_string($keytabrefresh_script_enable) {
     $keytabrefresh_script_enable_real = str2bool($keytabrefresh_script_enable)
   } else {
     $keytabrefresh_script_enable_real = $keytabrefresh_script_enable
